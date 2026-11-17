@@ -3,7 +3,11 @@
 // src/services/api.ts
 import axios from 'axios'
 
-const BASE = (import.meta.env.VITE_API_URL as string | undefined) ?? '/api'
+// In development, use Vite's proxy so the browser talks to the same origin.
+// Production builds use the explicitly configured API URL (or the same-origin proxy).
+const BASE = import.meta.env.DEV
+  ? '/api'
+  : (import.meta.env.VITE_API_URL as string | undefined) ?? '/api'
 
 const api = axios.create({ baseURL: BASE })
 
@@ -16,7 +20,9 @@ api.interceptors.request.use(cfg => {
 api.interceptors.response.use(
   r => r,
   err => {
-    if ((err as { response?: { status?: number } }).response?.status === 401) {
+    const requestUrl = (err as { config?: { url?: string } }).config?.url
+    const isLoginRequest = requestUrl?.replace(/\/$/, '').endsWith('/auth/login')
+    if (!isLoginRequest && (err as { response?: { status?: number } }).response?.status === 401) {
       localStorage.removeItem('rms_token')
       localStorage.removeItem('rms_user')
       window.location.href = '/login'

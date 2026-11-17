@@ -1,0 +1,120 @@
+(node:24904) [DEP0176] DeprecationWarning: fs.F_OK is deprecated, use fs.constants.F_OK instead
+(Use `node --trace-deprecation ...` to show where the warning was created)
+newman
+
+RMS-68030013-TestSuite
+
+□ Health & System
+└ TC-001 GET /api/health (Positive)
+  GET http://localhost:3002/api/health [200 OK, 373B, 97ms]
+  √  TC-001: health returns 200
+  √  TC-001: status is ok
+  √  TC-001: version 2.0.0
+
+□ Authentication
+└ TC-002 Login Admin (Positive)
+  POST http://localhost:3002/api/auth/login [200 OK, 594B, 199ms]
+  √  TC-002: admin login 200
+  √  TC-002: returns JWT token
+
+└ TC-003 Login Cashier
+  POST http://localhost:3002/api/auth/login [200 OK, 608B, 185ms]
+  √  TC-003: cashier login 200
+
+└ TC-004 Login Waiter
+  POST http://localhost:3002/api/auth/login [200 OK, 601B, 188ms]
+  √  TC-004: waiter login 200
+
+└ TC-005 Login Wrong Password (Negative)
+  POST http://localhost:3002/api/auth/login [401 Unauthorized, 342B, 188ms]
+  √  TC-005: wrong password → 401
+
+└ TC-006 Login Missing Credentials (Negative)
+  POST http://localhost:3002/api/auth/login [400 Bad Request, 352B, 8ms]
+  √  TC-006: missing creds → 400
+
+└ TC-007 No Token → 401 (Security)
+  GET http://localhost:3002/api/menu [401 Unauthorized, 344B, 6ms]
+  √  TC-007: no token → 401
+
+□ Menu
+└ TC-008 GET /menu (Positive)
+  GET http://localhost:3002/api/menu [200 OK, 2.91kB, 10ms]
+  √  TC-008: get menu 200
+  √  TC-008: returns array
+
+└ TC-009 Search Menu (Positive)
+  GET http://localhost:3002/api/menu?search=Pad Thai [200 OK, 522B, 11ms]
+  √  TC-009: search returns results
+
+└ TC-010 SQL Injection in Search (Security - BUG-003)
+  GET http://localhost:3002/api/menu?search=' OR '1'='1 [200 OK, 301B, 12ms]
+  √  TC-010 [BUG-003]: SQL Injection should NOT leak all records
+
+└ TC-011 Waiter Updates Menu Price (Security - BUG-004)
+  PUT http://localhost:3002/api/menu/4 [403 Forbidden, 344B, 7ms]
+  √  TC-011 [BUG-004]: Waiter cannot update menu price (expect 403)
+
+└ TC-012 Admin Adds Menu Item (Positive)
+  POST http://localhost:3002/api/menu [201 Created, 498B, 16ms]
+  √  TC-012: admin adds menu item → 201
+
+└ TC-013 Waiter Cannot Add Menu Item (Negative - Role Check)
+  POST http://localhost:3002/api/menu [403 Forbidden, 344B, 8ms]
+  √  TC-013: waiter cannot add menu → 403
+
+□ Orders
+└ TC-014 Create Order (Positive)
+  POST http://localhost:3002/api/orders [201 Created, 464B, 27ms]
+  √  TC-014: create order → 201
+
+└ TC-015 Double Booking Same Table (BUG-002)
+  POST http://localhost:3002/api/orders [409 Conflict, 352B, 19ms]
+  √  TC-015 [BUG-002]: Double booking → 409 Conflict
+
+└ TC-016 Add Item to Order
+  POST http://localhost:3002/api/orders/3/items [201 Created, 648B, 24ms]
+  √  TC-016: add item → 201
+
+└ TC-017 Confirm Order
+  PUT http://localhost:3002/api/orders/3/confirm [200 OK, 466B, 17ms]
+  √  TC-017: confirm order → 200
+
+└ TC-018 Create Order Without TableId (Negative)
+  POST http://localhost:3002/api/orders [400 Bad Request, 338B, 9ms]
+  √  TC-018: missing tableId → 400
+
+□ Payment
+└ TC-019 Underpayment (Negative)
+  POST http://localhost:3002/api/payments [400 Bad Request, 349B, 12ms]
+  √  TC-019: underpayment is rejected → 400
+  √  TC-019: insufficient payment message is returned
+
+└ TC-020 Exact Payment (Edge)
+  POST http://localhost:3002/api/payments [201 Created, 553B, 20ms]
+  √  TC-020: exact payment succeeds → 201
+  √  TC-020: exact payment has zero change
+
+└ TC-021 Payment Without Auth (Security)
+  POST http://localhost:3002/api/payments [401 Unauthorized, 344B, 7ms]
+  √  TC-021: no auth → 401
+
+┌─────────────────────────┬───────────────────┬──────────────────┐
+│                         │          executed │           failed │
+├─────────────────────────┼───────────────────┼──────────────────┤
+│              iterations │                 1 │                0 │
+├─────────────────────────┼───────────────────┼──────────────────┤
+│                requests │                21 │                0 │
+├─────────────────────────┼───────────────────┼──────────────────┤
+│            test-scripts │                21 │                0 │
+├─────────────────────────┼───────────────────┼──────────────────┤
+│      prerequest-scripts │                 0 │                0 │
+├─────────────────────────┼───────────────────┼──────────────────┤
+│              assertions │                27 │                0 │
+├─────────────────────────┴───────────────────┴──────────────────┤
+│ total run duration: 2.8s                                       │
+├────────────────────────────────────────────────────────────────┤
+│ total data received: 5.22kB (approx)                           │
+├────────────────────────────────────────────────────────────────┤
+│ average response time: 50ms [min: 6ms, max: 199ms, s.d.: 69ms] │
+└────────────────────────────────────────────────────────────────┘

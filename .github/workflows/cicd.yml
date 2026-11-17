@@ -1,4 +1,4 @@
-name: CI
+name: CI/CD
 
 on:
   push:
@@ -36,6 +36,9 @@ jobs:
     - name: Install backend dependencies
       run: cd backend && npm ci
 
+    - name: Audit backend dependencies
+      run: cd backend && npm audit --audit-level=high
+
     - name: Generate Prisma client
       run: cd backend && npx prisma generate
 
@@ -43,6 +46,34 @@ jobs:
       run: cd backend && npm test
       env:
         DATABASE_URL: postgresql://postgres:postgres@localhost:5432/rms_test
+
+    - name: Prepare database for API tests
+      run: cd backend && npx prisma db push && npm run db:seed
+      env:
+        DATABASE_URL: postgresql://postgres:postgres@localhost:5432/rms_test
+
+    - name: Start backend API
+      run: |
+        cd backend
+        npm run dev > /tmp/rms-backend.log 2>&1 &
+        for attempt in {1..30}; do
+          if curl --fail --silent http://localhost:3001/api/health; then
+            exit 0
+          fi
+          sleep 1
+        done
+        cat /tmp/rms-backend.log
+        exit 1
+      env:
+        DATABASE_URL: postgresql://postgres:postgres@localhost:5432/rms_test
+        JWT_SECRET: ci-test-secret
+        PORT: 3001
+
+    - name: Install Newman
+      run: npm install --global newman
+
+    - name: Run API collection
+      run: newman run tests/postman/RMS-68030013-TestSuite.json --environment tests/postman/env-ci.json --reporters cli
 
     - name: Setup Node.js for frontend
       uses: actions/setup-node@v4
@@ -53,6 +84,9 @@ jobs:
 
     - name: Install frontend dependencies
       run: cd frontend && npm ci
+
+    - name: Audit frontend dependencies
+      run: cd frontend && npm audit --audit-level=high
 
     - name: Run frontend build
       run: cd frontend && npm run build

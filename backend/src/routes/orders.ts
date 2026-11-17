@@ -57,7 +57,6 @@ router.get('/:id', authenticate, async (req, res) => {
 })
 
 // POST /api/orders — open new order
-// ⚠️ BUG-002 [Double Booking]: No check for existing open order on same table
 router.post('/', authenticate, async (req, res) => {
   try {
     const { tableId, note } = req.body as { tableId?: number; note?: string }
@@ -66,16 +65,21 @@ router.post('/', authenticate, async (req, res) => {
     const table = await prisma.restaurantTable.findUnique({ where: { id: tableId } })
     if (!table) { res.status(404).json({ error: 'Table not found' }); return }
 
-    // ⚠️ BUG-002: Missing duplicate check — allows two orders on same table
-    // Fix: const existing = await prisma.order.findFirst({ where: { tableId, status: 'open' } })
-    //      if (existing) { res.status(409).json({ error: 'Table already has an open order' }); return }
-
-    const [order] = await prisma.$transaction([
-      prisma.order.create({
+    // Updating the table row inside the transaction serializes concurrent attempts
+    // to open an order for the same table before checking for an active order.
+    const order = await prisma.$transaction(async (tx) => {
+      await tx.restaurantTable.update({ where: { id: tableId }, data: { status: 'occupied' } })
+      const existing = await tx.order.findFirst({
+        where: { tableId, status: { in: ['open', 'confirmed'] } },
+      })
+      if (existing) return null
+      return tx.order.create({
         data: { tableId, waiterId: req.user!.id, status: 'open', note },
-      }),
-      prisma.restaurantTable.update({ where: { id: tableId }, data: { status: 'occupied' } }),
-    ])
+      })
+    })
+    if (!order) {
+      res.status(409).json({ error: 'Table already has an active order' }); return
+    }
 
     res.status(201).json(order)
   } catch (err) {

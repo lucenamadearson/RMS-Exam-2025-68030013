@@ -2,8 +2,6 @@
 
 > **ข้อสอบปฏิบัติ** — รายวิชาการออกแบบและพัฒนาซอฟต์แวร์ 1 | KMITL
 
-[![CI](https://github.com/YOUR_USERNAME/restaurant-management-system/actions/workflows/ci.yml/badge.svg)](https://github.com/YOUR_USERNAME/restaurant-management-system/actions)
-
 ---
 
 ## 🏠 Project Overview
@@ -22,7 +20,7 @@
 |----------|------------|
 | Frontend | React 18 + Vite + **TypeScript** + **Tailwind CSS** |
 | Backend  | Node.js 22 LTS + Express + **TypeScript** |
-| Database | PostgreSQL 16 (Neon.tech) |
+| Database | PostgreSQL 16 (local Docker staging; Neon planned for cloud) |
 | ORM      | **Prisma** |
 | Testing  | **Vitest** + Supertest + Newman |
 | Deploy   | Vercel (FE) + Render (BE + DB) |
@@ -33,9 +31,9 @@
 
 | Service     | URL |
 |-------------|-----|
-| Frontend    | https://YOUR-FRONTEND.vercel.app |
-| Backend API | https://YOUR-BACKEND.onrender.com |
-| Health Check| https://YOUR-BACKEND.onrender.com/api/health |
+| Frontend    | ยังไม่ได้ Deploy; Local: http://localhost:80 |
+| Backend API | ยังไม่ได้ Deploy; Local: http://localhost:3002 |
+| Health Check| http://localhost:3002/api/health |
 
 ---
 
@@ -45,13 +43,13 @@
 
 ### Test Scope
 **In Scope:**
-- [ ] Authentication (Login/Logout, JWT)
-- [ ] Menu Management (CRUD + Role-based access)
-- [ ] Order Management (Open/Add Items/Confirm/Cancel)
-- [ ] Payment Processing (Cash/Card/QR)
-- [ ] Sales Reports
+- [x] Authentication (Login/Logout, JWT)
+- [x] Menu Management (CRUD + Role-based access)
+- [x] Order Management (Open/Add Items/Confirm/Cancel)
+- [x] Payment Processing (Cash/Card/QR)
+- [x] Sales Reports
 
-**Out of Scope:** _ระบุสิ่งที่ไม่ทดสอบ_
+**Out of Scope:** การเชื่อมต่อ payment gateway จริง และ load/stress test บน Production
 
 ### Test Approach
 
@@ -67,8 +65,8 @@
 |-----------|--------------|
 | Node.js   | 22 LTS |
 | PostgreSQL | 16 (Neon.tech) |
-| Browser   | _กรอก_ |
-| OS        | _กรอก_ |
+| Browser   | Microsoft Edge 157.0.4341.60 |
+| OS        | Windows 11 (10.0.26200) |
 
 ### Entry/Exit Criteria
 
@@ -79,8 +77,8 @@
 
 | ความเสี่ยง | ผลกระทบ | Priority |
 |-----------|---------|---------|
-| _กรอก_ | _กรอก_ | P1 |
-| _กรอก_ | _กรอก_ | P2 |
+| การชำระเงินผิดพลาด | สูญเสียรายได้และทำให้ยอดบัญชีไม่ตรง | P1 |
+| ออเดอร์ซ้ำ/จัดโต๊ะผิด | ครัวเตรียมอาหารซ้ำและกระทบการให้บริการ | P2 |
 
 ---
 
@@ -91,27 +89,25 @@
 ### Vitest Results
 ```
 Run: npm test
-✓ Payment returns positive change when overpaid
-✗ [BUG-001] Should NOT allow negative change  ← reveals bug!
-...
+Test Files: 2 passed | Tests: 20 passed
 ```
 
 ### Newman Pass Rate
 ```
-Total: 21  |  Passed: __  |  Failed: __  |  Pass Rate: __%
+Requests: 21 | Passed: 21 | Failed: 0 | Assertions: 27/27 | Pass Rate: 100%
 ```
 
 ### Test Case Table
 
 | TC-ID | Feature | Scenario | Expected | Actual | Pass/Fail |
 |-------|---------|----------|----------|--------|-----------|
-| TC-002 | Auth | Admin login | 200 + JWT | | |
-| TC-005 | Auth | Wrong password | 401 | | |
-| TC-007 | Security | No token | 401 | | |
-| TC-010 | Security | SQL Injection | Empty/400 | | |
-| TC-011 | Security | Waiter update price | 403 | | |
-| TC-015 | Order | Double booking | 409 | | |
-| TC-020 | Payment | Underpayment | 400 | | |
+| TC-002 | Auth | Admin login | 200 + JWT | 200 + JWT | Pass |
+| TC-005 | Auth | Wrong password | 401 | 401 | Pass |
+| TC-007 | Security | No token | 401 | 401 | Pass |
+| TC-010 | Security | SQL Injection | Empty/400 | 200, no unintended rows | Pass |
+| TC-011 | Security | Waiter update price | 403 | 403 | Pass |
+| TC-015 | Order | Double booking | 409 | 409 | Pass |
+| TC-019 | Payment | Underpayment | 400 | 400 | Pass |
 
 ---
 
@@ -119,17 +115,20 @@ Total: 21  |  Passed: __  |  Failed: __  |  Pass Rate: __%
 
 <!-- ส่วนที่ 3 -->
 
-## BUG-001: [ชื่อ Bug]
+## BUG-001: ปฏิเสธการชำระเงินต่ำกว่ายอดรวม (แก้ไขแล้ว)
 
 **Severity:** Critical
 **Feature:** Payment
 **Endpoint:** `POST /api/payments`
+**Status:** Fixed and verified by Newman TC-019
 
 ### Steps to Reproduce
-1. ...
+1. สร้างและยืนยันออเดอร์ที่มียอดรวมมากกว่า 1
+2. ส่งยอดชำระที่ต่ำกว่ายอดรวมไปยัง endpoint
 
 ### Expected / Actual Result
-...
+Expected: HTTP 400 และไม่มีการบันทึก Payment หรือเปลี่ยนสถานะออเดอร์
+Actual (ก่อนแก้): อนุญาตให้คำนวณ change ติดลบ; หลังแก้ Newman TC-019 ได้ HTTP 400 พร้อมข้อความ insufficient payment
 
 ### Business Impact
 ...
@@ -148,11 +147,12 @@ Docker Desktop (for local)
 
 ### Local Setup (Docker Compose)
 ```bash
-git clone https://github.com/YOUR_USERNAME/restaurant-management-system.git
-cd restaurant-management-system
+# Student repository: https://github.com/lucenamadearson/RMS-Exam-2025-68030013
+# โฟลเดอร์ workspace ปัจจุบันไม่มี Git metadata; clone repository ก่อนใช้งาน:
 docker compose up --build
 # Frontend: http://localhost
-# Backend:  http://localhost:3001/api/health
+# Backend:  http://localhost:${BACKEND_PORT:-3001}/api/health
+# Vite reads BACKEND_PORT from root .env for its /api proxy (defaults to 3001).
 ```
 
 ### Local Setup (Manual)
@@ -160,7 +160,7 @@ docker compose up --build
 # Backend
 cd backend && cp .env.example .env
 # แก้ DATABASE_URL ใน .env
-npm install && npx prisma db push && npx tsx prisma/seed.ts && npm run dev
+npm install && npx prisma db push && npm run db:seed && npm run dev
 
 # Frontend (Terminal ใหม่)
 cd frontend && cp .env.example .env.local
@@ -172,15 +172,14 @@ npm install && npm run dev
 
 | Variable | Description | Example |
 |----------|-------------|---------|
-| `DATABASE_URL` | Render PostgreSQL URL | `postgresql://user:pass@...render.com/db` |
+| `DATABASE_URL` | Neon PostgreSQL connection string | Set locally; never commit secrets |
 | `JWT_SECRET` | Random secret string | *(ไม่ระบุ)* |
 | `CORS_ORIGIN` | Frontend URL | `https://your-app.vercel.app` |
 
-### Render PostgreSQL Database Setup
-1. ไปที่ https://dashboard.render.com → Databases → New PostgreSQL
-2. เลือก Free plan หรือ Paid ตามต้องการ
-3. Copy External Database URL → ใส่เป็น `DATABASE_URL`
-4. รัน `npx prisma db push` เพื่อสร้าง Schema (local หรือใน Render build)
+### Neon PostgreSQL Database Setup
+1. Create or select a PostgreSQL 16 project in Neon.
+2. Set its rotated connection string as `DATABASE_URL` in Render's environment settings.
+3. Run `npx prisma db push` to create the schema before seeding.
 
 ### Vercel Deployment (Frontend)
 1. Import repo → Root Directory: `frontend`
@@ -208,11 +207,11 @@ npm install && npm run dev
 
 | Test | URL | Result |
 |------|-----|--------|
-| Health | GET /api/health | ✅/❌ |
-| Login | POST /api/auth/login | ✅/❌ |
-| Add Menu | POST /api/menu | ✅/❌ |
-| Open Order | POST /api/orders | ✅/❌ |
-| Payment | POST /api/payments | ✅/❌ |
+| Health | GET /api/health | ✅ Pass (local staging) |
+| Login | POST /api/auth/login | ✅ Pass (local staging) |
+| Add Menu | POST /api/menu | ✅ Pass (Newman) |
+| Open Order | POST /api/orders | ✅ Pass (Newman) |
+| Payment | POST /api/payments | ✅ Pass (Newman) |
 
 ---
 
@@ -220,15 +219,16 @@ npm install && npm run dev
 
 **Newman Pass Rate (Latest):**
 ```
-✓ TC-002: Admin login
-✓ TC-005: Wrong password → 401
-✗ TC-010: SQL Injection (BUG-003 detected)
-...
+Local verification: Backend Vitest 20/20, Newman 21/21 requests and 27/27 assertions, frontend production build passed. GitHub Actions has not been verified from the Student Repository.
+
+Frontend/API smoke evidence: [`tests/reports/frontend-api-smoke.txt`](./tests/reports/frontend-api-smoke.txt) and [`tests/reports/frontend-login.png`](./tests/reports/frontend-login.png).
 ```
 
 ---
 
 ## 🔐 Default Credentials (Testing Only)
+
+These seeded accounts are for local testing only. Replace credentials and secrets before any public deployment.
 
 | Role | Username | Password |
 |------|----------|----------|

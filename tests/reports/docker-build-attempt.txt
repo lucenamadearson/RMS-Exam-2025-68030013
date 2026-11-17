@@ -1,0 +1,9 @@
+Local Docker image rebuild (2026-11-17)
+=======================================
+Command: docker compose build
+Result: Failed before image completion.
+Frontend build container: esbuild exited with SIGBUS (bus error).
+Backend build container: npm cleanup encountered EIO after the BuildKit worker failed.
+Docker Desktop afterwards reported that the engine was unable to start; compose ps could not confirm current container state.
+No docker compose up/down or database-volume changes were run after the failure.
+The app had passed local Vite/API smoke checks before Docker Desktop became unavailable.

@@ -6,15 +6,21 @@ import { authenticate, requireRole } from '../middleware/auth'
 const router = Router()
 
 // POST /api/payments
-// ⚠️ BUG-001 [Critical]: No validation that amountPaid >= totalAmount
-// Negative change is stored and returned when customer underpays
 router.post('/', authenticate, requireRole('admin', 'cashier'), async (req, res) => {
   try {
     const { orderId, amountPaid, method } = req.body as {
       orderId?: number; amountPaid?: number; method?: 'cash' | 'card' | 'qr'
     }
-    if (!orderId || amountPaid === undefined) {
+    if (typeof orderId !== 'number' || !Number.isInteger(orderId) || orderId <= 0 || amountPaid === undefined) {
       res.status(400).json({ error: 'orderId and amountPaid required' }); return
+    }
+    const paid = Number(amountPaid)
+    if (!Number.isFinite(paid) || paid <= 0) {
+      res.status(400).json({ error: 'amountPaid must be a positive number' }); return
+    }
+    const paymentMethod = method ?? 'cash'
+    if (!['cash', 'card', 'qr'].includes(paymentMethod)) {
+      res.status(400).json({ error: 'method must be cash, card, or qr' }); return
     }
 
     const order = await prisma.order.findUnique({
@@ -30,17 +36,14 @@ router.post('/', authenticate, requireRole('admin', 'cashier'), async (req, res)
     }
 
     const totalAmount = Number(order.totalAmount)
-    const paid = Number(amountPaid)
-
-    // ⚠️ BUG-001: Missing underpayment validation
-    // Fix: if (paid < totalAmount) { res.status(400).json({ error: 'Insufficient payment amount' }); return }
-
-    // ⚠️ BUG-001: change will be NEGATIVE if paid < totalAmount
+    if (paid < totalAmount) {
+      res.status(400).json({ error: 'Insufficient payment amount' }); return
+    }
     const change = paid - totalAmount
 
     const [payment] = await prisma.$transaction([
       prisma.payment.create({
-        data: { orderId, cashierId: req.user!.id, totalAmount, amountPaid: paid, change, method: method ?? 'cash' },
+        data: { orderId, cashierId: req.user!.id, totalAmount, amountPaid: paid, change, method: paymentMethod },
       }),
       prisma.order.update({ where: { id: orderId }, data: { status: 'paid' } }),
       prisma.restaurantTable.update({ where: { id: order.tableId }, data: { status: 'available' } }),

@@ -1,0 +1,10 @@
+Frontend and API smoke test (local)
+=================================
+Frontend: http://localhost:5173/login
+Login page: rendered by Edge headless; screenshot: frontend-login.png
+GET /api/health through Vite proxy: 200, status=ok
+POST /api/auth/login through Vite proxy: 200, user=admin, role=admin
+GET /api/menu through Vite proxy with returned token: 200, 10 items
+Token value: intentionally omitted
+Database: local PostgreSQL Docker staging
+Cloud/Neon: not tested; no production deployment

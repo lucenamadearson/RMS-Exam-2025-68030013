@@ -1,0 +1,4 @@
+NAME           IMAGE                                  COMMAND                  SERVICE    CREATED          STATUS                    PORTS
+rms-backend    rms-exam-2025-68030013-main-backend    "docker-entrypoint.s…"   backend    11 minutes ago   Up 11 minutes (healthy)   0.0.0.0:3002->3001/tcp, [::]:3002->3001/tcp
+rms-db         postgres:16-alpine                     "docker-entrypoint.s…"   db         13 minutes ago   Up 13 minutes (healthy)   0.0.0.0:5432->5432/tcp, [::]:5432->5432/tcp
+rms-frontend   rms-exam-2025-68030013-main-frontend   "/docker-entrypoint.…"   frontend   11 minutes ago   Up 10 minutes             0.0.0.0:80->80/tcp, [::]:80->80/tcp

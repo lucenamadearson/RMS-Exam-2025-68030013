@@ -1,0 +1,36 @@
+
+> rms-backend@1.0.0 test
+> vitest run --reporter=verbose
+
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 C:/RMS-Exam-2025-68030013-main/backend
+
+ ✓ tests/unit/payment.test.ts > Payment Calculation Logic > returns correct positive change when overpaid 4ms
+ ✓ tests/unit/payment.test.ts > Payment Calculation Logic > returns zero change when exact amount is paid 1ms
+ ✓ tests/unit/payment.test.ts > Payment Calculation Logic > rejects underpayment instead of producing negative change 2ms
+ ✓ tests/unit/payment.test.ts > Payment Validation > accepts payment when amountPaid equals totalAmount 0ms
+ ✓ tests/unit/payment.test.ts > Payment Validation > accepts payment when amountPaid exceeds totalAmount 0ms
+ ✓ tests/unit/payment.test.ts > Payment Validation > rejects payment when amountPaid is less than totalAmount 0ms
+ ✓ tests/unit/payment.test.ts > Payment Validation > rejects payment of zero 0ms
+ ✓ tests/unit/payment.test.ts > Business Risk: Order Total Integrity > order total equals sum of all item subtotals 1ms
+ ✓ tests/api/auth.test.ts > GET /api/health > returns 200 with status ok 43ms
+ ✓ tests/api/auth.test.ts > POST /api/auth/login — input validation > returns 400 when body is empty 48ms
+ ✓ tests/api/auth.test.ts > POST /api/auth/login — input validation > returns 400 when username is missing 10ms
+ ✓ tests/api/auth.test.ts > POST /api/auth/login — input validation > returns 400 when password is missing 9ms
+ ✓ tests/api/auth.test.ts > POST /api/auth/login — input validation > returns 401 when user does not exist 9ms
+ ✓ tests/api/auth.test.ts > Protected routes — 401 without token > Menu list: GET /api/menu → 401 8ms
+ ✓ tests/api/auth.test.ts > Protected routes — 401 without token > Order list: GET /api/orders → 401 7ms
+ ✓ tests/api/auth.test.ts > Protected routes — 401 without token > Create order: POST /api/orders → 401 7ms
+ ✓ tests/api/auth.test.ts > Protected routes — 401 without token > Create payment: POST /api/payments → 401 8ms
+ ✓ tests/api/auth.test.ts > Protected routes — 401 without token > Sales report: GET /api/reports/sales → 401 8ms
+ ✓ tests/api/auth.test.ts > Protected routes — 401 without token > Me endpoint: GET /api/auth/me → 401 6ms
+ ✓ tests/api/auth.test.ts > GET /api/auth/me — invalid token > returns 401 for malformed JWT 11ms
+
+ Test Files  2 passed (2)
+      Tests  20 passed (20)
+   Start at  19:20:00
+   Duration  2.01s (transform 341ms, setup 0ms, import 1.39s, tests 194ms, environment 0ms)
+
